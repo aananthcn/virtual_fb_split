@@ -1,0 +1,8 @@
+built-in.o  COPYING.GPL-2.0  Makefile  modules.order  Module.symvers  README  virtual_fb.c  virtual_fb.ko  virtual_fb.mod.c  virtual_fb.mod.o  virtual_fb.o
+*.o
+*.symvers
+*.ko
+*.cmd
+*.order
+.tmp*
+*.mod.c
