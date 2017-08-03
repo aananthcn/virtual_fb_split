@@ -6,3 +6,6 @@ built-in.o  COPYING.GPL-2.0  Makefile  modules.order  Module.symvers  README  vi
 *.order
 .tmp*
 *.mod.c
+*.avi
+draw_fb
+*.swp
