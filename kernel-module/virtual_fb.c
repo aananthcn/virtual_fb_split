@@ -343,6 +343,7 @@ static int virtfb_map_video_memory(struct fb_info *fbi)
 		fbNext_phy = fbZero_phy;
 	}
 	else {
+		pr_debug("Splitting fb0 for fb%d\n", fb_no);
 		fbi->screen_base = (char *) fbNext_vir;
 		fbi->fix.smem_start = fbNext_phy;
 		fbNext_vir = (unsigned long) fbi->screen_base + fbi->fix.smem_len;
@@ -417,9 +418,11 @@ static int virtfb_register(struct fb_info *fbi, unsigned int id, int xres, int y
 	//TODO: Set framebuffer ID
 	sprintf(fbi->fix.id, "virt_fb%d", id);
 
-	//Setup small default resolution
-	fbi->var.xres_virtual = fbi->var.xres = xres;
-	fbi->var.yres_virtual = fbi->var.yres  = yres;
+	//Setup resolutions
+	fbi->var.xres_virtual = xres;
+	fbi->var.yres_virtual = yres;
+	fbi->var.xres = xres;
+	fbi->var.yres = yres;
 	fbi->var.bits_per_pixel = 16;
 
 	virtfb_check_var(&fbi->var, fbi);
@@ -476,6 +479,25 @@ int __init allocate_register_fb(struct fb_info **fbi, int i, int x, int y)
 	return 0;
 }
 
+
+/*
+ * Framebuffer size structure defintions and configurations
+ */
+struct fb_size
+{
+	int x;
+	int y;
+};
+
+struct fb_size fbs[] =
+{
+	{ 1024, 768 }, /* 0th fb is always the Master framebuffer */
+	{ 512, 512 },
+	{ 512, 256 },
+	{ 512, 384 },
+	{ 512, 384 }
+};
+
 /*!
  * Main entry function for the framebuffer. The function registers the power
  * management callback functions with the kernel and also registers the MXCFB
@@ -491,31 +513,15 @@ int __init virtfb_init(void)
         /*
          * Initialize FB structures
          */
-        vfbcount = 5;
+        vfbcount = sizeof(fbs) / sizeof(fbs[0]);
         size = sizeof(struct fb_info*) * vfbcount;
 		g_fb_list = kzalloc(size, GFP_KERNEL);
 		pr_debug("allocating %d info bytes for %d framebuffers\n", size, vfbcount);
 
-		i = 0;
-		if(0 > allocate_register_fb(&g_fb_list[i], i, 1024, 768))
-			goto virtfb_init_failed;
-
-		i = 1;
-		if(0 > allocate_register_fb(&g_fb_list[i], i, 512, 512))
-			goto virtfb_init_failed;
-
-		i = 2;
-		if(0 > allocate_register_fb(&g_fb_list[i], i, 512, 256))
-			goto virtfb_init_failed;
-
-		i = 3;
-		if(0 > allocate_register_fb(&g_fb_list[i], i, 512, 384))
-			goto virtfb_init_failed;
-
-		i = 4;
-		if(0 > allocate_register_fb(&g_fb_list[i], i, 512, 384))
-			goto virtfb_init_failed;
-		
+		for (i = 0; i < vfbcount; i++) {
+			if(0 > allocate_register_fb(&g_fb_list[i], i, fbs[i].x, fbs[i].y))
+				goto virtfb_init_failed;
+		}
 
         return 0;
 
